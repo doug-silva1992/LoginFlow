@@ -14,8 +14,8 @@ else
 fi
 
 # Ajusta permissões
-chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache 2>/dev/null || true
-chmod -R 775 /var/www/storage /var/www/bootstrap/cache 2>/dev/null || true
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/database 2>/dev/null || true
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache /var/www/database 2>/dev/null || true
 
 # Gera a APP_KEY se o .env existir mas a chave estiver vazia
 if [ -f /var/www/.env ] && ! grep -q "^APP_KEY=base64:" /var/www/.env; then
