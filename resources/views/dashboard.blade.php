@@ -36,7 +36,6 @@
       min-height: 100vh;
     }
 
-    /* ── SIDEBAR ── */
     .sidebar {
       width: 240px;
       background: var(--sidebar-bg);
@@ -113,7 +112,6 @@
     }
     .sidebar-footer a:hover { background: rgba(239,68,68,.12); color: #ef4444; }
 
-    /* ── MAIN ── */
     .main-wrap {
       margin-left: 240px;
       flex: 1;
@@ -122,7 +120,6 @@
       min-height: 100vh;
     }
 
-    /* ── TOPBAR ── */
     .topbar {
       background: var(--card-bg);
       border-bottom: 1px solid var(--border);
@@ -156,13 +153,11 @@
       font-size: .85rem;
     }
 
-    /* ── CONTENT ── */
     .content {
       padding: 32px;
       flex: 1;
     }
 
-    /* ── STAT CARDS ── */
     .stat-card {
       background: var(--card-bg);
       border-radius: 14px;
@@ -188,7 +183,6 @@
     .stat-label { font-size: .75rem; color: var(--text-muted); font-weight: 500; margin-bottom: 2px; text-transform: uppercase; letter-spacing: .04em; }
     .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
 
-    /* ── TABLE CARD ── */
     .table-card {
       background: var(--card-bg);
       border-radius: 14px;
@@ -373,7 +367,6 @@
     .pg-btn:hover, .pg-btn.active { background: var(--green); color: #fff; border-color: var(--green); }
     .pg-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-    /* ── MODAL ── */
     .modal-content { border: none; border-radius: 16px; font-family: 'Sora', sans-serif; }
     .modal-header { border-bottom: 1px solid var(--border); padding: 20px 24px 16px; }
     .modal-title { font-weight: 700; font-size: 1rem; }
@@ -435,7 +428,6 @@
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="dot"></div>
@@ -443,20 +435,14 @@
   </div>
   <ul class="sidebar-nav">
     <li><a href="#" class="active"><i class="bi bi-grid-1x2"></i> Dashboard</a></li>
-    <li><a href="#"><i class="bi bi-people"></i> Usuários</a></li>
-    <li><a href="#"><i class="bi bi-shield-check"></i> Acessos</a></li>
-    <li><a href="#"><i class="bi bi-bar-chart-line"></i> Relatórios</a></li>
-    <li><a href="#"><i class="bi bi-gear"></i> Configurações</a></li>
   </ul>
   <div class="sidebar-footer">
-    <a href="#"><i class="bi bi-box-arrow-left"></i> Sair</a>
+    <a href="#" onclick="logout(event)"><i class="bi bi-box-arrow-left"></i> Sair</a>
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main-wrap">
 
-  <!-- TOPBAR -->
   <header class="topbar">
     <span class="topbar-title">Gerenciamento de Usuários</span>
     <div class="topbar-right">
@@ -465,50 +451,20 @@
     </div>
   </header>
 
-  <!-- CONTENT -->
   <main class="content">
 
-    <!-- STAT CARDS -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-xl-3">
         <div class="stat-card">
           <div class="stat-icon green"><i class="bi bi-people-fill"></i></div>
           <div>
             <div class="stat-label">Total</div>
-            <div class="stat-value">248</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-xl-3">
-        <div class="stat-card">
-          <div class="stat-icon blue"><i class="bi bi-person-check-fill"></i></div>
-          <div>
-            <div class="stat-label">Ativos</div>
-            <div class="stat-value">193</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-xl-3">
-        <div class="stat-card">
-          <div class="stat-icon orange"><i class="bi bi-hourglass-split"></i></div>
-          <div>
-            <div class="stat-label">Expirando</div>
-            <div class="stat-value">31</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-xl-3">
-        <div class="stat-card">
-          <div class="stat-icon red"><i class="bi bi-person-x-fill"></i></div>
-          <div>
-            <div class="stat-label">Expirados</div>
-            <div class="stat-value">24</div>
+            <div class="stat-value" id="statTotal">—</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- TABLE CARD -->
     <div class="table-card">
       <div class="table-card-header">
         <h5>Usuários</h5>
@@ -532,8 +488,6 @@
             <tr>
               <th>Usuário</th>
               <th>Email</th>
-              <th>Status</th>
-              <th>Data de Expiração</th>
               <th>Cadastrado em</th>
               <th style="text-align:center;">Ações</th>
             </tr>
@@ -552,7 +506,6 @@
   </main>
 </div>
 
-<!-- EDIT / ADD MODAL -->
 <div class="modal fade" id="userModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -570,18 +523,6 @@
           <label class="form-label">Email</label>
           <input type="email" class="form-control" id="inputEmail" placeholder="email@exemplo.com"/>
         </div>
-        <div class="mb-3">
-          <label class="form-label">Data de expiração do acesso</label>
-          <input type="date" class="form-control" id="inputExpiry"/>
-        </div>
-        <div class="mb-1">
-          <label class="form-label">Status</label>
-          <select class="form-select" id="inputStatus">
-            <option value="active">Ativo</option>
-            <option value="warning">Expirando</option>
-            <option value="expired">Expirado</option>
-          </select>
-        </div>
       </div>
       <div class="modal-footer">
         <button class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
@@ -591,7 +532,6 @@
   </div>
 </div>
 
-<!-- DELETE MODAL -->
 <div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content">
@@ -616,20 +556,7 @@
     ['#e0f2fe','#0369a1'], ['#f3e8ff','#7e22ce']
   ];
 
-  let users = [
-    { name:'Ana Silva',       email:'ana.silva@empresa.com',    expiry:'2025-08-15', status:'active',  created:'2024-01-10' },
-    { name:'Bruno Costa',     email:'b.costa@empresa.com',      expiry:'2025-07-01', status:'warning', created:'2024-02-14' },
-    { name:'Carla Mendes',    email:'carla.m@empresa.com',      expiry:'2024-12-31', status:'expired', created:'2023-12-01' },
-    { name:'Diego Torres',    email:'diego.t@empresa.com',      expiry:'2025-09-20', status:'active',  created:'2024-03-08' },
-    { name:'Elisa Rocha',     email:'elisa.r@empresa.com',      expiry:'2025-07-10', status:'warning', created:'2024-04-22' },
-    { name:'Fábio Almeida',   email:'fabio.a@empresa.com',      expiry:'2025-10-05', status:'active',  created:'2024-05-01' },
-    { name:'Gabriela Lima',   email:'gabi.lima@empresa.com',    expiry:'2024-11-20', status:'expired', created:'2023-11-15' },
-    { name:'Henrique Souza',  email:'henrique.s@empresa.com',   expiry:'2025-08-30', status:'active',  created:'2024-06-03' },
-    { name:'Isabela Nunes',   email:'isa.nunes@empresa.com',    expiry:'2025-07-22', status:'warning', created:'2024-07-11' },
-    { name:'João Ferreira',   email:'joao.f@empresa.com',       expiry:'2025-11-01', status:'active',  created:'2024-08-19' },
-    { name:'Karen Oliveira',  email:'karen.o@empresa.com',      expiry:'2024-10-31', status:'expired', created:'2023-10-01' },
-    { name:'Lucas Martins',   email:'lucas.m@empresa.com',      expiry:'2025-12-15', status:'active',  created:'2024-09-05' },
-  ];
+  let users = [];
 
   let filtered = [...users];
   let currentPage = 1;
@@ -678,9 +605,7 @@
             </div>
           </td>
           <td class="user-email-cell">${u.email}</td>
-          <td>${statusBadge(u.status)}</td>
-          <td><span class="date-expiry ${ec}">${formatDate(u.expiry)}</span></td>
-          <td class="date-cell">${formatDate(u.created)}</td>
+          <td class="date-cell">${u.created !== '—' ? formatDate(u.created) : '—'}</td>
           <td style="text-align:center;">
             <div class="action-btns" style="justify-content:center;">
               <button class="btn-icon edit" title="Editar" onclick="openModal('edit', ${globalIdx})"><i class="bi bi-pencil"></i></button>
@@ -701,9 +626,28 @@
       total === 0 ? 'Nenhum registro encontrado' : `Mostrando ${start}–${end} de ${total} registros`;
 
     const container = document.getElementById('paginationBtns');
+    const MAX = 5;
+    let startPage, endPage;
+    if (pages <= MAX) {
+      startPage = 1; endPage = pages;
+    } else {
+      const half = Math.floor(MAX / 2);
+      startPage = Math.max(1, currentPage - half);
+      endPage   = startPage + MAX - 1;
+      if (endPage > pages) { endPage = pages; startPage = endPage - MAX + 1; }
+    }
+
     let html = `<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
-    for (let p = 1; p <= pages; p++) {
+    if (startPage > 1) {
+      html += `<button class="pg-btn" onclick="goPage(1)">1</button>`;
+      if (startPage > 2) html += `<span class="pg-btn" style="cursor:default;border:none;">…</span>`;
+    }
+    for (let p = startPage; p <= endPage; p++) {
       html += `<button class="pg-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+    }
+    if (endPage < pages) {
+      if (endPage < pages - 1) html += `<span class="pg-btn" style="cursor:default;border:none;">…</span>`;
+      html += `<button class="pg-btn" onclick="goPage(${pages})">${pages}</button>`;
     }
     html += `<button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages||pages===0?'disabled':''}>›</button>`;
     container.innerHTML = html;
@@ -733,14 +677,10 @@
       document.getElementById('modalTitle').textContent = 'Editar Usuário';
       document.getElementById('inputName').value   = u.name;
       document.getElementById('inputEmail').value  = u.email;
-      document.getElementById('inputExpiry').value = u.expiry;
-      document.getElementById('inputStatus').value = u.status;
     } else {
       document.getElementById('modalTitle').textContent = 'Novo Usuário';
       document.getElementById('inputName').value   = '';
       document.getElementById('inputEmail').value  = '';
-      document.getElementById('inputExpiry').value = '';
-      document.getElementById('inputStatus').value = 'active';
     }
     userModal.show();
   }
@@ -748,17 +688,15 @@
   function saveUser() {
     const name   = document.getElementById('inputName').value.trim();
     const email  = document.getElementById('inputEmail').value.trim();
-    const expiry = document.getElementById('inputExpiry').value;
-    const status = document.getElementById('inputStatus').value;
-    if (!name || !email || !expiry) { alert('Preencha todos os campos.'); return; }
+    if (!name || !email) { alert('Preencha todos os campos.'); return; }
 
     const idx = document.getElementById('editIndex').value;
     const today = new Date().toISOString().split('T')[0];
 
     if (idx !== '') {
-      users[parseInt(idx)] = { ...users[parseInt(idx)], name, email, expiry, status };
+      users[parseInt(idx)] = { ...users[parseInt(idx)], name, email };
     } else {
-      users.push({ name, email, expiry, status, created: today });
+      users.push({ name, email, expiry: null, status: 'active', created: today });
     }
     filtered = [...users];
     filterTable();
@@ -787,20 +725,94 @@
     XLSX.writeFile(wb, 'usuarios.xlsx');
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (deleteIndex === null) return;
+    const user = users[deleteIndex];
+    const token = localStorage.getItem('api_token');
+
+    try {
+      const res = await fetch(`/delete_user/${user.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer ' + token,
+          'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'Erro ao excluir usuário.');
+        return;
+      }
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+      return;
+    }
+
     users.splice(deleteIndex, 1);
     deleteIndex = null;
     filtered = [...users];
+    document.getElementById('statTotal').textContent = users.length;
     if ((currentPage - 1) * PER_PAGE >= filtered.length && currentPage > 1) currentPage--;
     filterTable();
     deleteModal.hide();
   }
 
+  async function logout(e) {
+    e.preventDefault();
+    const token = localStorage.getItem('api_token');
+    try {
+      await fetch('/logout', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer ' + token,
+          'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+      });
+    } finally {
+      localStorage.removeItem('api_token');
+      window.location.href = '/';
+    }
+  }
+
+  async function loadUsers() {
+    const token = localStorage.getItem('api_token');
+    if (!token) { window.location.href = '/'; return; }
+    try {
+      const res = await fetch('/users', {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer ' + token
+        }
+      });
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem('api_token');
+        window.location.href = '/';
+        return;
+      }
+      const data = await res.json();
+      users = data.map(u => ({
+        id:      u.id,
+        name:    u.name,
+        email:   u.email,
+        expiry:  u.expiry   ?? null,
+        status:  u.status   ?? 'active',
+        created: u.created_at ? u.created_at.split('T')[0] : '—',
+      }));
+      filtered = [...users];
+      document.getElementById('statTotal').textContent = users.length;
+      renderTable();
+    } catch (e) {
+      console.error('Erro ao carregar usuários:', e);
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     userModal   = new bootstrap.Modal(document.getElementById('userModal'));
     deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    renderTable();
+    loadUsers();
   });
 </script>
 </body>

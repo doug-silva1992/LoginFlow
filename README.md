@@ -1,6 +1,6 @@
 # LoginFlow
 
-Aplicação de autenticação construída com **Laravel 13**, **Laravel Sanctum**, **Docker** e documentação de API via **Swagger (L5-Swagger)**.
+Aplicação de autenticação e gerenciamento de usuários construída com **Laravel 13**, **Laravel Sanctum**, **Docker** e documentação de API via **Swagger (L5-Swagger)**.
 
 ---
 
@@ -23,13 +23,18 @@ Aplicação de autenticação construída com **Laravel 13**, **Laravel Sanctum*
 ```
 app/
   Http/Controllers/
-    Controller.php      # Anotações globais OpenAPI (Info, Server, SecurityScheme)
-    AuthController.php  # Endpoints de autenticação documentados
+    Controller.php        # Anotações globais OpenAPI (Info, Server, SecurityScheme)
+    AuthController.php    # Endpoints de autenticação documentados
+    UsersController.php   # Endpoints de usuários (listar, excluir)
   Models/
     User.php
 resources/views/
-  index.blade.php       # Página de login
-  dashboard.blade.php   # Dashboard pós-login
+  index.blade.php         # Página de login
+  dashboard.blade.php     # Dashboard pós-login com tabela de usuários
+  unauthorized.blade.php  # Tela de acesso negado
+database/
+  migrations/
+    ..._create_personal_access_tokens_table.php  # Migration do Sanctum
 docker/
   nginx/default.conf
   entrypoint.sh
@@ -67,15 +72,37 @@ As rotas protegidas utilizam `auth:sanctum`. Envie o token no header:
 Authorization: Bearer {token}
 ```
 
+O token é gerado no login e armazenado no `localStorage` do browser.
+
+### Controle de acesso por domínio
+
+Ao efetuar login, o e-mail é verificado no frontend. Caso não termine em `@fontecred.com.br`, o usuário é redirecionado para a página `/unauthorized`.
+
 ### Rotas disponíveis
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
-| `POST` | `/login` | Não | Autentica e retorna token |
+| `POST` | `/login` | Não | Autentica e retorna token Sanctum |
 | `POST` | `/logout` | Sim | Revoga o token atual |
-| `GET` | `/user` | Sim | Retorna dados do usuário autenticado |
-| `GET` | `/dashboard` | Sim | Painel do usuário |
+| `GET` | `/users` | Sim | Lista todos os usuários |
+| `DELETE` | `/delete_user/{id}` | Sim | Remove um usuário pelo ID |
+| `GET` | `/dashboard` | Sim | Painel de gerenciamento de usuários |
+| `GET` | `/unauthorized` | Não | Tela de acesso negado |
 | `GET` | `/` | Não | Página de login |
+
+---
+
+## Dashboard
+
+O dashboard consome a API `/users` via `fetch` com o Bearer token e exibe:
+
+- **Card Total** — número total de usuários retornados pela API
+- **Tabela de usuários** — nome, e-mail, data de cadastro e ações
+- **Busca em tempo real** — filtra por nome ou e-mail
+- **Paginação** — 8 registros por página, máximo 5 botões visíveis com `…` para intervalos
+- **Exportar Excel** — exporta os registros filtrados via SheetJS
+- **Excluir** — chama `DELETE /delete_user/{id}` e atualiza a tabela localmente
+- **Sair** — chama `POST /logout`, remove o token e redireciona para o login
 
 ---
 

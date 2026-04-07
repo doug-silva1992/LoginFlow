@@ -181,15 +181,16 @@
       </ul>
     </div>
     <main class="form-signin w-100 m-auto">
-      <form>
+      <form id="loginForm">
         <img
           class="mb-4"
           src="{{ asset('images/logo-fontecred.png') }}"
           alt=""
-          width="72"'
+          width="72"
           height="57"
         />
         <h1 class="h3 mb-3 fw-normal">Login</h1>
+        <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
         <div class="form-floating">
           <input
             type="email"
@@ -219,11 +220,57 @@
             Remember me
           </label>
         </div>
-        <button class="btn btn-primary w-100 py-2" type="submit">
+        <button class="btn btn-primary w-100 py-2" type="submit" id="btnEntrar">
           Entrar
         </button>
       </form>
     </main>
-    <script src="{{ asset('js/bootstrap.bundle.min.js') }}" class="astro-vvvwv3sm"></script>
+    <script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+      document.getElementById('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('btnEntrar');
+        const errorBox = document.getElementById('loginError');
+        const email = document.getElementById('floatingInput').value;
+        const password = document.getElementById('floatingPassword').value;
+
+        btn.disabled = true;
+        btn.textContent = 'Aguarde...';
+        errorBox.classList.add('d-none');
+
+        try {
+          const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ email, password })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            localStorage.setItem('api_token', data.token);
+            if (!email.toLowerCase().endsWith('@fontecred.com.br')) {
+              window.location.href = '/unauthorized';
+            } else {
+              window.location.href = '/dashboard';
+            }
+          } else {
+            errorBox.textContent = data.message || 'Credenciais inválidas.';
+            errorBox.classList.remove('d-none');
+          }
+        } catch (err) {
+          errorBox.textContent = 'Erro ao conectar com o servidor.';
+          errorBox.classList.remove('d-none');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
+        }
+      });
+    </script>
   </body>
 </html>
