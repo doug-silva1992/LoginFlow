@@ -7,6 +7,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', function () { return view('dashboard'); })->name('dashboard');
 });
 
-Route::get('/', function () {
-    return view('index');
-});
+Route::get('/', function () { return view('index'); });
+Route::get('/dashboard', function () { return view('dashboard'); })->name('dashboard');

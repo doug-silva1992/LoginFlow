@@ -1,58 +1,138 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# LoginFlow
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicação de autenticação construída com **Laravel 13**, **Laravel Sanctum**, **Docker** e documentação de API via **Swagger (L5-Swagger)**.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Tecnologia | Versão |
+|---|---|
+| PHP | 8.3 |
+| Laravel | 13 |
+| Laravel Sanctum | 4.x |
+| L5-Swagger (darkaonline) | 11.x |
+| MySQL | 8.0 |
+| Nginx | alpine |
+| Docker Compose | v2 |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## Estrutura do projeto
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```
+app/
+  Http/Controllers/
+    Controller.php      # Anotações globais OpenAPI (Info, Server, SecurityScheme)
+    AuthController.php  # Endpoints de autenticação documentados
+  Models/
+    User.php
+resources/views/
+  index.blade.php       # Página de login
+  dashboard.blade.php   # Dashboard pós-login
+docker/
+  nginx/default.conf
+  entrypoint.sh
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## Subindo o ambiente
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+docker compose up -d
+```
 
-## Code of Conduct
+Serviços disponíveis:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Serviço | URL / Porta |
+|---|---|
+| Aplicação (Nginx) | http://localhost:8080 |
+| MySQL | localhost:3306 |
 
-## Security Vulnerabilities
+### Primeira execução
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+docker exec loginflow_app php artisan migrate
+docker exec loginflow_app php artisan db:seed
+```
+
+---
+
+## Autenticação (Sanctum)
+
+As rotas protegidas utilizam `auth:sanctum`. Envie o token no header:
+
+```
+Authorization: Bearer {token}
+```
+
+### Rotas disponíveis
+
+| Método | Rota | Auth | Descrição |
+|---|---|---|---|
+| `POST` | `/login` | Não | Autentica e retorna token |
+| `POST` | `/logout` | Sim | Revoga o token atual |
+| `GET` | `/user` | Sim | Retorna dados do usuário autenticado |
+| `GET` | `/dashboard` | Sim | Painel do usuário |
+| `GET` | `/` | Não | Página de login |
+
+---
+
+## Documentação da API (Swagger)
+
+A documentação é gerada com **L5-Swagger 11** usando **PHP 8 Attributes** (`#[OA\...]`).
+
+### Acessar a UI
+
+```
+http://localhost:8080/api/documentation
+```
+
+### Regenerar a documentação
+
+```bash
+docker exec loginflow_app php artisan l5-swagger:generate
+```
+
+### Arquivo gerado
+
+```
+storage/api-docs/api-docs.json
+```
+
+### Como documentar um endpoint
+
+```php
+use OpenApi\Attributes as OA;
+
+#[OA\Get(
+    path: '/exemplo',
+    summary: 'Descrição do endpoint',
+    tags: ['Tag'],
+    security: [['sanctum' => []]],
+    responses: [
+        new OA\Response(response: 200, description: 'Sucesso'),
+    ]
+)]
+public function exemplo() { ... }
+```
+
+---
+
+## Variáveis de ambiente (.env)
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=loginflow
+DB_USERNAME=laravel
+DB_PASSWORD=secret
+```
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+[MIT](https://opensource.org/licenses/MIT)
