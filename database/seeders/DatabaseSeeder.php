@@ -13,9 +13,6 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void{
         $file = new \SplFileObject(database_path('seeders/usuarios.csv'));
         $file->setFlags(\SplFileObject::READ_CSV | \SplFileObject::SKIP_EMPTY);
@@ -37,18 +34,20 @@ class DatabaseSeeder extends Seeder
                 continue;
             }
 
-            $data   = array_combine($header, $row);
-            $rows[] = [
+            $data    = array_combine($header, $row);
+            $isAdmin = str_ends_with(strtolower(trim($data['email'])), '@fontecred.com.br');
+            $rows[]  = [
                 'name'       => $data['name'],
                 'email'      => $data['email'],
                 'password'   => Hash::make($data['password']),
+                'is_admin'   => $isAdmin,
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
 
             if (count($rows) === 500) {
                 DB::table('users')->insert($rows);
-            $rows = [];
+                $rows = [];
             }
         }
 

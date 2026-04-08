@@ -424,20 +424,22 @@
       .sidebar { transform: translateX(-100%); }
       .main-wrap { margin-left: 0; }
     }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin-icon { display: inline-block; animation: spin .7s linear infinite; }
   </style>
 </head>
 <body>
 
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="dot"></div>
-    <span>F</span>
+    <img src="{{ asset('images/fontecred_logo-colored.png') }}" alt="FonteCred" style="max-height:40px;width:auto;">
   </div>
   <ul class="sidebar-nav">
     <li><a href="#" class="active"><i class="bi bi-grid-1x2"></i> Dashboard</a></li>
   </ul>
   <div class="sidebar-footer">
-    <a href="#" onclick="logout(event)"><i class="bi bi-box-arrow-left"></i> Sair</a>
+    <a href="#" id="logoutBtn" onclick="logout(event)"><i class="bi bi-box-arrow-left" id="logoutIcon"></i> <span id="logoutText">Sair</span></a>
   </div>
 </aside>
 
@@ -761,6 +763,13 @@
 
   async function logout(e) {
     e.preventDefault();
+    const btn  = document.getElementById('logoutBtn');
+    const icon = document.getElementById('logoutIcon');
+    const text = document.getElementById('logoutText');
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.6';
+    icon.className = 'bi bi-arrow-repeat spin-icon';
+    text.textContent = 'Saindo...';
     const token = localStorage.getItem('api_token');
     try {
       await fetch('/logout', {
