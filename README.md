@@ -62,6 +62,8 @@ docker exec loginflow_app php artisan migrate
 docker exec loginflow_app php artisan db:seed
 ```
 
+> O seeder lê `database/seeders/usuarios.csv` e define `is_admin = true` automaticamente para e-mails com domínio `@fontecred.com.br`.
+
 ---
 
 ## Autenticação (Sanctum)
@@ -74,9 +76,13 @@ Authorization: Bearer {token}
 
 O token é gerado no login e armazenado no `localStorage` do browser.
 
-### Controle de acesso por domínio
+### Controle de acesso por `is_admin`
 
-Ao efetuar login, o e-mail é verificado no frontend. Caso não termine em `@fontecred.com.br`, o usuário é redirecionado para a página `/unauthorized`.
+Após o login, a API retorna o campo `is_admin` na resposta. O frontend redireciona para `/dashboard` se `is_admin` for `true`, ou para `/unauthorized` caso contrário.
+
+```json
+{ "token": "...", "is_admin": true }
+```
 
 ### Rotas disponíveis
 
@@ -96,13 +102,29 @@ Ao efetuar login, o e-mail é verificado no frontend. Caso não termine em `@fon
 
 O dashboard consome a API `/users` via `fetch` com o Bearer token e exibe:
 
+- **Logo** — imagem `public/images/fontecred_logo-colored.png` na sidebar
 - **Card Total** — número total de usuários retornados pela API
 - **Tabela de usuários** — nome, e-mail, data de cadastro e ações
 - **Busca em tempo real** — filtra por nome ou e-mail
 - **Paginação** — 8 registros por página, máximo 5 botões visíveis com `…` para intervalos
 - **Exportar Excel** — exporta os registros filtrados via SheetJS
 - **Excluir** — chama `DELETE /delete_user/{id}` e atualiza a tabela localmente
-- **Sair** — chama `POST /logout`, remove o token e redireciona para o login
+- **Sair** — exibe loading animado, chama `POST /logout`, remove o token e redireciona para o login
+
+---
+
+## Healthcheck do container PHP-FPM
+
+O `docker-compose.yml` verifica se a porta 9000 do PHP-FPM está realmente aceitando conexões antes de iniciar o Nginx, evitando o erro **502 Bad Gateway** durante o startup.
+
+```yaml
+healthcheck:
+  test: ["CMD-SHELL", "php -r \"$s=@fsockopen('127.0.0.1',9000,$e,$m,1);if(!$s){exit(1);}fclose($s);exit(0);\""]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
+```
 
 ---
 
