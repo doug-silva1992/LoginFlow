@@ -463,7 +463,6 @@
   <header class="topbar">
     <span class="topbar-title">Gerenciamento de Usuários</span>
     <div class="topbar-right">
-      <div class="avatar">AD</div>
     </div>
   </header>
 
@@ -538,7 +537,7 @@
       </div>
 
       <div class="table-footer">
-        <span id="paginationInfo">Mostrando 1–8 de 12 registros</span>
+        <span id="paginationInfo"></span>
         <div class="pagination-btns" id="paginationBtns"></div>
       </div>
     </div>
