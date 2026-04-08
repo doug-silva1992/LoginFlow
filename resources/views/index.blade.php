@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
     <title>Signin</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-small-fontecred.png') }}"/>
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
     <link href="{{ asset('css/sign-in.css') }}" rel="stylesheet" />
