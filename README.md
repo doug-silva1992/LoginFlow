@@ -12,6 +12,9 @@ Aplicação de autenticação e gerenciamento de usuários construída com **Lar
 | Laravel | 13 |
 | Laravel Sanctum | 4.x |
 | L5-Swagger (darkaonline) | 11.x |
+| Bootstrap | 5.3.3 |
+| Bootstrap Icons | 1.11.3 |
+| SheetJS (xlsx) | 0.18.5 |
 | MySQL | 8.0 |
 | Nginx | alpine |
 | Docker Compose | v2 |
@@ -24,20 +27,25 @@ Aplicação de autenticação e gerenciamento de usuários construída com **Lar
 app/
   Http/Controllers/
     Controller.php        # Anotações globais OpenAPI (Info, Server, SecurityScheme)
-    AuthController.php    # Endpoints de autenticação documentados
-    UsersController.php   # Endpoints de usuários (listar, excluir)
+    AuthController.php    # Login, logout, endpoint /me
+    UsersController.php   # CRUD de usuários + importação de CSV
   Models/
     User.php
 resources/views/
-  index.blade.php         # Página de login
-  dashboard.blade.php     # Dashboard pós-login com tabela de usuários
-  unauthorized.blade.php  # Tela de acesso negado
+  index.blade.php              # Página de login
+  dashboard.blade.php          # Dashboard pós-login
+  unauthorized.blade.php       # Tela de acesso negado
+  modals/
+    user-modal.blade.php       # Modal de criação/edição de usuário
+    delete-modal.blade.php     # Modal de confirmação de exclusão
 database/
   migrations/
-    ..._create_personal_access_tokens_table.php  # Migration do Sanctum
+  seeders/
+    DatabaseSeeder.php         # Importa usuarios.csv na primeira carga
+    usuarios.csv
 docker/
   nginx/default.conf
-  entrypoint.sh
+  entrypoint.sh                # Cria diretórios de storage e ajusta permissões
 ```
 
 ---
@@ -84,17 +92,24 @@ Após o login, a API retorna o campo `is_admin` na resposta. O frontend redireci
 { "token": "...", "is_admin": true }
 ```
 
+### Bloqueio por expiração
+
+Se o campo `expiration_date` do usuário estiver no passado, o login retorna **HTTP 403** com a mensagem `"Usuário Expirado."` e nenhum token é emitido.
+
 ### Rotas disponíveis
 
 | Método | Rota | Auth | Descrição |
 |---|---|---|---|
-| `POST` | `/login` | Não | Autentica e retorna token Sanctum |
+| `GET` | `/` | Não | Página de login |
+| `POST` | `/login` | Não | Autentica e retorna token + `is_admin` |
 | `POST` | `/logout` | Sim | Revoga o token atual |
-| `GET` | `/users` | Sim | Lista todos os usuários |
-| `DELETE` | `/delete_user/{id}` | Sim | Remove um usuário pelo ID |
 | `GET` | `/dashboard` | Sim | Painel de gerenciamento de usuários |
 | `GET` | `/unauthorized` | Não | Tela de acesso negado |
-| `GET` | `/` | Não | Página de login |
+| `GET` | `/users` | Sim | Lista todos os usuários |
+| `POST` | `/create_user` | Sim | Cria um novo usuário |
+| `PUT` | `/update_user/{id}` | Sim | Atualiza um usuário existente |
+| `DELETE` | `/delete_user/{id}` | Sim | Remove um usuário pelo ID |
+| `POST` | `/upload_csv` | Sim | Importa usuários a partir de um CSV |
 
 ---
 
@@ -103,13 +118,40 @@ Após o login, a API retorna o campo `is_admin` na resposta. O frontend redireci
 O dashboard consome a API `/users` via `fetch` com o Bearer token e exibe:
 
 - **Logo** — imagem `public/images/fontecred_logo-colored.png` na sidebar
-- **Card Total** — número total de usuários retornados pela API
-- **Tabela de usuários** — nome, e-mail, data de cadastro e ações
+- **Cards de estatísticas** — Total, Ativos e Expirados
+- **Tabela de usuários** — nome, e-mail, status (badge), data de expiração e ações (editar/excluir)
 - **Busca em tempo real** — filtra por nome ou e-mail
-- **Paginação** — 8 registros por página, máximo 5 botões visíveis com `…` para intervalos
+- **Paginação** — 8 registros por página com botões recolhidos (`…`)
+- **Criar / Editar usuário** — modal com campos: nome, e-mail, senha (opcional na edição) e data de expiração
+- **Excluir usuário** — confirmação em modal dedicado
 - **Exportar Excel** — exporta os registros filtrados via SheetJS
-- **Excluir** — chama `DELETE /delete_user/{id}` e atualiza a tabela localmente
-- **Sair** — exibe loading animado, chama `POST /logout`, remove o token e redireciona para o login
+- **Importar CSV** — envia o arquivo ao servidor (`POST /upload_csv`), insere usuários novos e retorna contagem de inserções/ignorados
+- **Sair** — exibe spinner, chama `POST /logout`, apaga o token e redireciona ao login
+
+### Colunas de Status
+
+| Badge | Critério |
+|---|---|
+| `Ativo` (verde) | Sem data de expiração ou data futura (> 30 dias) |
+| `Atenção` (amarelo) | Expira nos próximos 30 dias |
+| `Expirado` (vermelho) | Data de expiração no passado |
+
+---
+
+## Importação via CSV
+
+O endpoint `POST /upload_csv` aceita um arquivo `.csv` com as seguintes colunas (cabeçalho obrigatório):
+
+| Coluna | Obrigatória | Observação |
+|---|---|---|
+| `name` ou `nome` | Sim | Nome do usuário |
+| `email` | Sim | Deve ser único |
+| `password` | Não | Se ausente, gera senha aleatória |
+| `expiration_date` | Não | Formato `YYYY-MM-DD` |
+
+- E-mails já cadastrados são ignorados (contados em `skipped`).
+- `is_admin` é definido automaticamente pelo domínio `@fontecred.com.br`.
+- A resposta retorna `inserted`, `skipped` e `errors`.
 
 ---
 
@@ -148,23 +190,6 @@ docker exec loginflow_app php artisan l5-swagger:generate
 
 ```
 storage/api-docs/api-docs.json
-```
-
-### Como documentar um endpoint
-
-```php
-use OpenApi\Attributes as OA;
-
-#[OA\Get(
-    path: '/exemplo',
-    summary: 'Descrição do endpoint',
-    tags: ['Tag'],
-    security: [['sanctum' => []]],
-    responses: [
-        new OA\Response(response: 200, description: 'Sucesso'),
-    ]
-)]
-public function exemplo() { ... }
 ```
 
 ---

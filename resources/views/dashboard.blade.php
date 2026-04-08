@@ -245,6 +245,21 @@
     }
     .btn-excel:hover { background: #dcfce7; border-color: #86efac; transform: translateY(-1px); }
 
+    .btn-import {
+      background: #fff;
+      color: #2563eb;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: 'Sora', sans-serif;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+    .btn-import:hover { background: #dbeafe; border-color: #93c5fd; transform: translateY(-1px); }
+
     .btn-add {
       background: var(--green);
       color: #fff;
@@ -448,7 +463,6 @@
   <header class="topbar">
     <span class="topbar-title">Gerenciamento de Usuários</span>
     <div class="topbar-right">
-      <i class="bi bi-bell" style="font-size:1.1rem;color:var(--text-muted);cursor:pointer;"></i>
       <div class="avatar">AD</div>
     </div>
   </header>
@@ -465,6 +479,24 @@
           </div>
         </div>
       </div>
+      <div class="col-6 col-xl-3">
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="bi bi-person-check-fill"></i></div>
+          <div>
+            <div class="stat-label">Ativos</div>
+            <div class="stat-value" id="statActive">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="stat-card">
+          <div class="stat-icon red"><i class="bi bi-person-x-fill"></i></div>
+          <div>
+            <div class="stat-label">Expirados</div>
+            <div class="stat-value" id="statExpired">—</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="table-card">
@@ -478,6 +510,10 @@
           <button class="btn-excel" onclick="exportExcel()">
             <i class="bi bi-file-earmark-excel"></i> Exportar Excel
           </button>
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="importCSV(event)"/>
+          <button class="btn-import" onclick="document.getElementById('csvFileInput').click()">
+            <i class="bi bi-upload"></i> Importar CSV
+          </button>
           <button class="btn-add" onclick="openModal('add')">
             <i class="bi bi-plus-lg"></i> Novo Usuário
           </button>
@@ -490,6 +526,8 @@
             <tr>
               <th>Usuário</th>
               <th>Email</th>
+              <th>Status</th>
+              <th>Expiração</th>
               <th>Cadastrado em</th>
               <th style="text-align:center;">Ações</th>
             </tr>
@@ -508,47 +546,9 @@
   </main>
 </div>
 
-<div class="modal fade" id="userModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalTitle">Novo Usuário</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="editIndex"/>
-        <div class="mb-3">
-          <label class="form-label">Nome completo</label>
-          <input type="text" class="form-control" id="inputName" placeholder="Ex: Ana Silva"/>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Email</label>
-          <input type="email" class="form-control" id="inputEmail" placeholder="email@exemplo.com"/>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn-save" onclick="saveUser()">Salvar</button>
-      </div>
-    </div>
-  </div>
-</div>
+@include('modals.user-modal')
 
-<div class="modal fade" id="deleteModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content">
-      <div class="modal-body text-center py-4">
-        <div class="delete-icon"><i class="bi bi-trash3-fill"></i></div>
-        <h6 style="font-weight:700;margin-bottom:8px;">Excluir usuário?</h6>
-        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:20px;">Esta ação não pode ser desfeita.</p>
-        <div class="d-flex gap-2 justify-content-center">
-          <button class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
-          <button class="btn-save" style="background:#ef4444;" onclick="confirmDelete()">Excluir</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+@include('modals.delete-modal')
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -607,6 +607,8 @@
             </div>
           </td>
           <td class="user-email-cell">${u.email}</td>
+          <td>${statusBadge(u.status)}</td>
+          <td class="date-expiry ${u.expiry ? expiryClass(u.expiry) : ''}">${u.expiry ? formatDate(u.expiry) : '—'}</td>
           <td class="date-cell">${u.created !== '—' ? formatDate(u.created) : '—'}</td>
           <td style="text-align:center;">
             <div class="action-btns" style="justify-content:center;">
@@ -673,41 +675,171 @@
 
   function openModal(mode, idx) {
     document.getElementById('editIndex').value = idx ?? '';
-    const today = new Date().toISOString().split('T')[0];
     if (mode === 'edit' && idx !== undefined) {
       const u = users[idx];
-      document.getElementById('modalTitle').textContent = 'Editar Usuário';
-      document.getElementById('inputName').value   = u.name;
-      document.getElementById('inputEmail').value  = u.email;
+      document.getElementById('modalTitle').textContent  = 'Editar Usuário';
+      document.getElementById('inputName').value         = u.name;
+      document.getElementById('inputEmail').value        = u.email;
+      document.getElementById('inputPassword').value     = '';
+      document.getElementById('inputExpiry').value       = u.expiry ?? '';
+      document.getElementById('passwordHint').style.display = '';
+      document.getElementById('passwordLabel').textContent  = 'Senha';
     } else {
-      document.getElementById('modalTitle').textContent = 'Novo Usuário';
-      document.getElementById('inputName').value   = '';
-      document.getElementById('inputEmail').value  = '';
+      document.getElementById('modalTitle').textContent  = 'Novo Usuário';
+      document.getElementById('inputName').value         = '';
+      document.getElementById('inputEmail').value        = '';
+      document.getElementById('inputPassword').value     = '';
+      document.getElementById('inputExpiry').value       = '';
+      document.getElementById('passwordHint').style.display = 'none';
+      document.getElementById('passwordLabel').textContent  = 'Senha';
     }
     userModal.show();
   }
 
-  function saveUser() {
-    const name   = document.getElementById('inputName').value.trim();
-    const email  = document.getElementById('inputEmail').value.trim();
-    if (!name || !email) { alert('Preencha todos os campos.'); return; }
+  async function saveUser() {
+    const name     = document.getElementById('inputName').value.trim();
+    const email    = document.getElementById('inputEmail').value.trim();
+    const password = document.getElementById('inputPassword').value;
+    const expiry   = document.getElementById('inputExpiry').value || null;
+    if (!name || !email) { alert('Preencha todos os campos obrigatórios.'); return; }
 
-    const idx = document.getElementById('editIndex').value;
+    const idx   = document.getElementById('editIndex').value;
     const today = new Date().toISOString().split('T')[0];
+    const token = localStorage.getItem('api_token');
+    const isEdit = idx !== '';
 
-    if (idx !== '') {
-      users[parseInt(idx)] = { ...users[parseInt(idx)], name, email };
-    } else {
-      users.push({ name, email, expiry: null, status: 'active', created: today });
+    if (!isEdit && !password) { alert('Informe a senha para o novo usuário.'); return; }
+
+    const saveBtn = document.querySelector('#userModal .btn-save');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Salvando...';
+
+    try {
+      let res, data;
+
+      if (isEdit) {
+        const user = users[parseInt(idx)];
+        const body = { name, email, expiration_date: expiry };
+        if (password) body.password = password;
+        res  = await fetch(`/update_user/${user.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token,
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify(body)
+        });
+        data = await res.json();
+        if (!res.ok) { alert(data.error || 'Erro ao atualizar usuário.'); return; }
+        const isExpired = expiry && new Date(expiry) < new Date(today);
+        const entry = { ...user, name, email, expiry, status: isExpired ? 'expired' : 'active' };
+        users[parseInt(idx)] = entry;
+      } else {
+        res  = await fetch('/create_user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token,
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify({ name, email, password, expiration_date: expiry })
+        });
+        data = await res.json();
+        if (!res.ok) { alert(data.error || 'Erro ao criar usuário.'); return; }
+        const isExpired = expiry && new Date(expiry) < new Date(today);
+        users.push({
+          id:      data.user?.id ?? null,
+          name, email,
+          expiry,
+          status:  isExpired ? 'expired' : 'active',
+          created: today
+        });
+      }
+
+      filtered = [...users];
+      updateStats();
+      filterTable();
+      userModal.hide();
+    } catch (e) {
+      alert('Erro ao conectar com o servidor.');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Salvar';
     }
-    filtered = [...users];
-    filterTable();
-    userModal.hide();
   }
 
   function openDelete(idx) {
     deleteIndex = idx;
     deleteModal.show();
+  }
+
+  async function importCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const token = localStorage.getItem('api_token');
+
+    // Salva o arquivo no servidor
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const uploadRes = await fetch('/upload_csv', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer ' + token,
+          'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: form
+      });
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json().catch(() => ({}));
+        console.warn('Erro ao salvar CSV no servidor:', err);
+      } else {
+        const result = await uploadRes.json();
+        alert(`Importação concluída:\n✔ ${result.inserted} inserido(s)\n⏭ ${result.skipped} ignorado(s)${result.errors.length ? '\n⚠ Erros: ' + result.errors.join(', ') : ''}`);
+        await loadUsers();
+        return;
+      }
+    } catch (e) {
+      console.warn('Aviso: não foi possível salvar o CSV no servidor.', e);
+    }
+
+    // Processa o arquivo localmente
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { alert('CSV vazio ou sem dados.'); return; }
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const today   = new Date().toISOString().split('T')[0];
+      const todayD  = new Date(today);
+      let added = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        if (cols.length < headers.length) continue;
+        const row = {};
+        headers.forEach((h, idx) => row[h] = cols[idx] ?? '');
+        const expiry  = row['expiration_date'] || row['expiry'] || null;
+        const expired = expiry && new Date(expiry) < todayD;
+        users.push({
+          id:      null,
+          name:    row['name']  || row['nome']  || '',
+          email:   row['email'] || '',
+          expiry:  expiry,
+          status:  expired ? 'expired' : 'active',
+          created: row['created_at'] ? row['created_at'].split('T')[0] : today,
+        });
+        added++;
+      }
+      event.target.value = '';
+      filtered = [...users];
+      updateStats();
+      filterTable();
+      alert(`${added} registro(s) importado(s).`);
+    };
+    reader.readAsText(file);
   }
 
   function exportExcel() {
@@ -755,7 +887,7 @@
     users.splice(deleteIndex, 1);
     deleteIndex = null;
     filtered = [...users];
-    document.getElementById('statTotal').textContent = users.length;
+    updateStats();
     if ((currentPage - 1) * PER_PAGE >= filtered.length && currentPage > 1) currentPage--;
     filterTable();
     deleteModal.hide();
@@ -802,20 +934,31 @@
         return;
       }
       const data = await res.json();
-      users = data.map(u => ({
-        id:      u.id,
-        name:    u.name,
-        email:   u.email,
-        expiry:  u.expiry   ?? null,
-        status:  u.status   ?? 'active',
-        created: u.created_at ? u.created_at.split('T')[0] : '—',
-      }));
+      const today = new Date(); today.setHours(0,0,0,0);
+      users = data.map(u => {
+        const expiry = u.expiration_date ?? u.expiry ?? null;
+        const isExpired = expiry && new Date(expiry) < today;
+        return {
+          id:      u.id,
+          name:    u.name,
+          email:   u.email,
+          expiry:  expiry,
+          status:  isExpired ? 'expired' : (u.status ?? 'active'),
+          created: u.created_at ? u.created_at.split('T')[0] : '—',
+        };
+      });
       filtered = [...users];
-      document.getElementById('statTotal').textContent = users.length;
+      updateStats();
       renderTable();
     } catch (e) {
       console.error('Erro ao carregar usuários:', e);
     }
+  }
+
+  function updateStats() {
+    document.getElementById('statTotal').textContent   = users.length;
+    document.getElementById('statActive').textContent  = users.filter(u => u.status === 'active').length;
+    document.getElementById('statExpired').textContent = users.filter(u => u.status === 'expired').length;
   }
 
   document.addEventListener('DOMContentLoaded', () => {

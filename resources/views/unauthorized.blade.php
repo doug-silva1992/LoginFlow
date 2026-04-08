@@ -62,6 +62,9 @@
       transition: background .2s, transform .15s;
     }
     .btn-logout:hover { background: #dc2626; transform: translateY(-1px); }
+    .btn-logout:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin-icon { display: inline-block; animation: spin .7s linear infinite; }
   </style>
 </head>
 <body>
@@ -71,14 +74,20 @@
     </div>
     <h1>Acesso não autorizado</h1>
     <p>Você não tem permissão para acessar esta página.<br/>Entre em contato com o administrador do sistema.</p>
-    <button class="btn-logout" onclick="logout()">
-      <i class="bi bi-box-arrow-left"></i> Sair
+    <button class="btn-logout" id="logoutBtn" onclick="logout()">
+      <i class="bi bi-box-arrow-left" id="logoutIcon"></i> <span id="logoutText">Sair</span>
     </button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     async function logout() {
+      const btn  = document.getElementById('logoutBtn');
+      const icon = document.getElementById('logoutIcon');
+      const text = document.getElementById('logoutText');
+      btn.disabled = true;
+      icon.className = 'bi bi-arrow-repeat spin-icon';
+      text.textContent = 'Saindo...';
       const token = localStorage.getItem('api_token');
       try {
         await fetch('/logout', {

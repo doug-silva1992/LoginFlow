@@ -6,6 +6,7 @@
     <meta name="description" content="" />
     <title>Signin</title>
     <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
     <link href="{{ asset('css/sign-in.css') }}" rel="stylesheet" />
     <style>
       .bd-placeholder-img {
@@ -55,6 +56,8 @@
         white-space: nowrap;
         -webkit-overflow-scrolling: touch;
       }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .spin-icon { display: inline-block; animation: spin .7s linear infinite; }
     </style>
   </head>
   <body class="d-flex align-items-center py-4 bg-body-tertiary">
@@ -87,8 +90,9 @@
           />
           <label for="floatingPassword">Senha</label>
         </div>
-        <button class="btn btn-dark w-100 py-2" type="submit" id="btnEntrar">
-          Entrar
+        <button class="btn btn-dark w-100 py-2 d-flex align-items-center justify-content-center gap-2" type="submit" id="btnEntrar">
+          <i class="bi bi-box-arrow-in-right" id="btnIcon"></i>
+          <span id="btnText">Entrar</span>
         </button>
       </form>
     </main>
@@ -103,7 +107,8 @@
         const password = document.getElementById('floatingPassword').value;
 
         btn.disabled = true;
-        btn.textContent = 'Aguarde...';
+        document.getElementById('btnIcon').className = 'bi bi-arrow-repeat spin-icon';
+        document.getElementById('btnText').textContent = 'Aguarde...';
         errorBox.classList.add('d-none');
 
         try {
@@ -126,6 +131,7 @@
             } else {
               window.location.href = '/unauthorized';
             }
+            return;
           } else {
             errorBox.textContent = data.message || 'Credenciais inválidas.';
             errorBox.classList.remove('d-none');
@@ -133,10 +139,10 @@
         } catch (err) {
           errorBox.textContent = 'Erro ao conectar com o servidor.';
           errorBox.classList.remove('d-none');
-        } finally {
-          btn.disabled = false;
-          btn.textContent = 'Entrar';
         }
+        btn.disabled = false;
+        document.getElementById('btnIcon').className = 'bi bi-box-arrow-in-right';
+        document.getElementById('btnText').textContent = 'Entrar';
       });
     </script>
   </body>

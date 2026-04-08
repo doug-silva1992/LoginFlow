@@ -27,7 +27,10 @@ class AuthController extends Controller
                 response: 200,
                 description: 'Login realizado com sucesso',
                 content: new OA\JsonContent(
-                    properties: [new OA\Property(property: 'token', type: 'string', example: '1|abc123...')]
+                    properties: [
+                        new OA\Property(property: 'token', type: 'string', example: '1|abc123...'),
+                        new OA\Property(property: 'is_admin', type: 'boolean', example: true),
+                    ]
                 )
             ),
             new OA\Response(response: 401, description: 'Credenciais inválidas'),
@@ -44,11 +47,18 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciais inválidas.'], 401);
         }
 
-        $token = $request->user()->createToken('api-token')->plainTextToken;
+        $user = $request->user();
+
+        if ($user->expiration_date && \Carbon\Carbon::parse($user->expiration_date)->startOfDay()->isPast()) {
+            Auth::logout();
+            return response()->json(['message' => 'Usuário Expirado.'], 403);
+        }
+
+        $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
             'token'    => $token,
-            'is_admin' => (bool) $request->user()->is_admin,
+            'is_admin' => (bool) $user->is_admin,
         ]);
     }
 

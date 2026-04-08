@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
                 'name'       => $data['name'],
                 'email'      => $data['email'],
                 'password'   => Hash::make($data['password']),
+                'expiration_date' => $data['expiration_date'],
                 'is_admin'   => $isAdmin,
                 'created_at' => now(),
                 'updated_at' => now(),
