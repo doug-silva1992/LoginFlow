@@ -207,6 +207,50 @@ DB_PASSWORD=secret
 
 ---
 
+## Jobs e Agendamentos
+
+### DeleteExpiredUsers
+
+Remove automaticamente usuários (não-admins) cujo `expiration_date` é anterior a **6 meses** da data atual.
+
+| Atributo | Valor |
+|---|---|
+| Classe | `App\Jobs\DeleteExpiredUsers` |
+| Implementa | `ShouldQueue` (processado pela fila) |
+| Agendamento | Mensal (`Schedule::job(...)->monthly()`) |
+| Escopo | Somente usuários com `is_admin = false` |
+
+#### Executar manualmente via Docker
+
+**Execução direta (sem fila):**
+```bash
+docker exec loginflow_app php artisan tinker --execute="(new \App\Jobs\DeleteExpiredUsers())->handle()"
+```
+
+**Verificar quantos usuários seriam afetados:**
+```bash
+docker exec loginflow_app php artisan tinker --execute="echo \App\Models\User::whereDate('expiration_date', '<=', now()->subMonths(6))->where('is_admin', false)->count() . ' usuários elegíveis para exclusão';"
+```
+
+**Disparar via fila (requer worker ativo):**
+```bash
+docker exec loginflow_app php artisan tinker --execute="\App\Jobs\DeleteExpiredUsers::dispatch()"
+```
+
+**Iniciar worker da fila:**
+```bash
+docker exec loginflow_app php artisan queue:work
+```
+
+**Executar o scheduler manualmente:**
+```bash
+docker exec loginflow_app php artisan schedule:run
+```
+
+> O resultado da execução é registrado em `storage/logs/laravel.log`.
+
+---
+
 ## License
 
 [MIT](https://opensource.org/licenses/MIT)
